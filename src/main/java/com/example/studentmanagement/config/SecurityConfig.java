@@ -8,6 +8,7 @@ import com.example.studentmanagement.service.TokenBlacklistService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -15,6 +16,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -30,6 +36,20 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
+    // CORS: the frontend runs on its own port (e.g. 5500), so the browser needs
+    // this backend to say "that origin is allowed to call me".
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));   // includes the Authorization header
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            JwtUtil jwtUtil,
@@ -39,12 +59,13 @@ public class SecurityConfig {
         JwtAuthFilter jwtFilter = new JwtAuthFilter(jwtUtil, userDetailsService, blacklistService);
 
         http
+            .cors(Customizer.withDefaults())  // lets the separate frontend call this API (see bean below)
             .csrf(csrf -> csrf.disable())   // JWT in a header, no cookies/sessions
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(e -> e.authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
             .authorizeHttpRequests(auth -> auth
-                // frontend files (the pages themselves are public; the DATA is protected)
-                .requestMatchers("/", "/*.html", "/css/**", "/js/**", "/favicon.ico", "/error").permitAll()
+                // Spring's own error page
+                .requestMatchers("/error", "/api/health").permitAll()
                 // register, login, logout
                 .requestMatchers("/api/auth/**").permitAll()
                 // everything else (all /api/students/**) needs a valid token

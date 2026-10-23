@@ -8,7 +8,7 @@ Backend and frontend run together: the HTML/CSS/JS pages live in
 2. Open `src/main/resources/application.properties` and set `spring.datasource.password`.
    The `student_db` database and all tables are created automatically.
 3. `mvn spring-boot:run`   (or run `StudentManagementApplication` from Eclipse/STS/IntelliJ)
-4. Open http://localhost:8080  ->  Register -> Login -> Dashboard
+4. Open http://localhost:9191  ->  Register -> Login -> Dashboard
 
 ## Where things happen (backend)
 | Folder | What it does |
