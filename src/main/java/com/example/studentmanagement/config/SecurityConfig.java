@@ -37,6 +37,7 @@ public class SecurityConfig {
     }
 
     // CORS: the frontend runs on its own port (e.g. 5500), so the browser needs
+   
     // this backend to say "that origin is allowed to call me".
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
